@@ -13,8 +13,8 @@ logs:
 	docker compose logs -f
 
 test:
-	docker compose run --rm server npm test
-	docker compose run --rm client npm test
+	docker compose run --rm --no-deps server npm test
+	docker compose run --rm --no-deps client npm test
 
 clean:
 	docker compose down -v --rmi local
