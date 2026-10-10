@@ -1,18 +1,18 @@
 import { COLS } from "./board";
 
 export type PieceType = "I" | "O" | "T" | "S" | "Z" | "J" | "L";
-export type Shape = number[][];
+export type Forma = number[][];
 
 export type Piece = {
   type: PieceType;
-  shape: Shape;
+  forma: Forma;
   x: number;
   y: number;
 };
 
 export const PIECE_TYPES: PieceType[] = ["I", "O", "T", "S", "Z", "J", "L"];
 
-export const SHAPES: Record<PieceType, Shape> = {
+export const FORMAS: Record<PieceType, Forma> = {
   I: [
     [0, 0, 0, 0],
     [1, 1, 1, 1],
@@ -52,7 +52,7 @@ export const SHAPES: Record<PieceType, Shape> = {
 
 export const createPiece = (type: PieceType): Piece => ({
   type,
-  shape: SHAPES[type],
-  x: Math.floor((COLS - SHAPES[type][0].length) / 2),
+  forma: FORMAS[type],
+  x: Math.floor((COLS - FORMAS[type][0].length) / 2),
   y: 0,
 });
