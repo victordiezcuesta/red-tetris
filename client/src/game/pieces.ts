@@ -7,7 +7,7 @@ export type Piece = {
 	type: PieceType;
 	shape: Shape;
 	x: number; //columna del tablero donde está la pieza
-	y: number; //columna del tablero donde está la pieza
+	y: number; //fila del tablero donde está la pieza
 };
 
 export const PIECE_TYPES: PieceType[] = ["I", "O", "T", "S", "Z", "J", "L"];
