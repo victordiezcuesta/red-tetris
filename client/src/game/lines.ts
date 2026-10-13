@@ -1,49 +1,50 @@
 import { COLS, PENALTY_CELL, type Board } from "./board";
 
-// Una fila está completa si todas sus casillas tienen bloque
-// y ninguna es de penalización.
-function isRowComplete(row: number[]): boolean {
-  for (let col = 0; col < row.length; col++) {
-    if (row[col] === 0) return false;             // hay un hueco
-    if (row[col] === PENALTY_CELL) return false;  // fila indestructible
-  }
-  return true;
+function isRowComplete(row: number[]): boolean
+{
+	for (let col = 0; col < row.length; col++)
+	{
+		if (row[col] === 0) //hay un hueco libre
+			return false;
+		if (row[col] === PENALTY_CELL)
+			return false;
+	}
+	return true;
 }
 
-// Crea una fila vacía (10 ceros).
-function createEmptyRow(): number[] {
-  const row: number[] = [];
-
-  for (let col = 0; col < COLS; col++) {
-    row.push(0);
-  }
-  return row;
+function createEmptyRow(): number[]
+{
+	const row: number[] = [];
+	for (let col = 0; col < COLS; col++)
+	{
+		row.push(0);
+	}
+	return row;
 }
 
-// Elimina las filas completas y devuelve el tablero nuevo
-// junto con el número de filas eliminadas.
-export function clearLines(board: Board): { board: Board; cleared: number } {
-  const keptRows: number[][] = [];
-  let cleared = 0;
+export function clearLines(board: Board): { board: Board; rowsCleared: number }
+{
+	const keptRows: number[][] = [];
+	let rowsCleared = 0;
 
-  // 1. Nos quedamos solo con las filas que NO están completas
-  for (let row = 0; row < board.length; row++) {
-    if (isRowComplete(board[row])) {
-      cleared++;
-    } else {
-      keptRows.push([...board[row]]);
-    }
-  }
+	for (let row = 0; row < board.length; row++)
+	{
+		if (isRowComplete(board[row])) 
+			rowsCleared++;
+		else
+			keptRows.push([...board[row]]); //nos quedamos con las filas no completas | con los ... hacemos que sea una copia con distinta ubicacion en la memoria
+	}
 
-  // 2. Añadimos tantas filas vacías arriba como filas hemos borrado
-  const newBoard: Board = [];
+	//creamos el tablero nuevo con el numero de filas vacias que hemos contado completas de piezas y con las nuevas que nos hemos quedado
+	const newBoard: Board = [];
+	for (let i = 0; i < rowsCleared; i++)
+	{
+		newBoard.push(createEmptyRow());
+	}
+	for (let i = 0; i < keptRows.length; i++)
+	{
+		newBoard.push(keptRows[i]);
+	}
 
-  for (let i = 0; i < cleared; i++) {
-    newBoard.push(createEmptyRow());
-  }
-  for (let i = 0; i < keptRows.length; i++) {
-    newBoard.push(keptRows[i]);
-  }
-
-  return { board: newBoard, cleared: cleared };
+	return { board: newBoard, rowsCleared: rowsCleared };
 }
