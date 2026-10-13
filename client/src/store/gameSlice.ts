@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 import { createEmptyBoard, type Board } from "../game/board";
 import type { Piece, PieceType } from "../game/pieces";
@@ -8,6 +8,7 @@ import { createPiece } from "../game/pieces";
 import { mergePiece } from "../game/merge";
 import { clearLines } from "../game/lines";
 import { hasCollision } from "../game/collision";
+import { addPenaltyLines } from "../game/penalty";
 
 export type GameStatus = "waiting" | "playing" | "lost";
 
@@ -24,6 +25,26 @@ export const initialState: GameState = {
 	pieceQueue: [],
 	status: "waiting",
 };
+
+function generateNextPiece(state: GameState): void
+{
+	const nextType = state.pieceQueue.shift(); //shift quita el primer elemento del array de la cola de piezas y devuelve el tipo que es
+	if (nextType === undefined) //no tenemos nada en la cola
+	{
+		state.currentPiece = null;
+		return;
+	}
+
+	const newPiece = createPiece(nextType);
+	if (hasCollision(state.board, newPiece)) //si la nueva pieza segun se crea choca hemos perdido
+	{
+		state.currentPiece = null;
+		state.status = "lost";
+		return;
+	}
+
+	state.currentPiece = newPiece;
+}
 
 const gameSlice = createSlice({
 	name: "game",
@@ -82,27 +103,46 @@ const gameSlice = createSlice({
 			const result = clearLines(mergedBoard);
 			state.board = result.board;
 
-			const nextType = state.pieceQueue.shift(); //shift quita el primer elemento del array de la cola de piezas y devuelve el tipo que es
-			if (nextType === undefined) //no tenemos nada en la cola
+			generateNextPiece(state);
+		},
+
+		startGame(state)
+		{
+			state.board = createEmptyBoard();
+			state.currentPiece = null; //no creamos la pieza, esperando que llegue el array de piezas del servidor
+			state.pieceQueue = [];
+			state.status = "playing";
+		},
+
+		receivePieces(state, action: PayloadAction<PieceType[]>) //esta acción lleva un payload de tipo PieceType[]
+		{
+			for (let i = 0; i < action.payload.length; i++) //action.payload es la lista que hemos declarado
 			{
-				state.currentPiece = null;
-				return;
+				state.pieceQueue.push(action.payload[i]);
 			}
 
-			const newPiece = createPiece(nextType);
-			if (hasCollision(state.board, newPiece)) //si la nueva pieza segun se crea choca hemos perdido
+			if (state.status === "playing" && state.currentPiece === null) // Si la partida está en marcha pero no hay pieza cayendo, creamos una pieza
+				generateNextPiece(state);
+		},
+
+		receivePenalty(state, action: PayloadAction<number>)
+		{
+			if (state.status !== "playing")
+				return;
+
+			state.board = addPenaltyLines(state.board, action.payload);
+
+			if (state.currentPiece !== null && hasCollision(state.board, state.currentPiece)) //si tenemos una pieza cayendo y se produce una colision al añadir las lineas de penalizacion el juego acaba
 			{
 				state.currentPiece = null;
 				state.status = "lost";
-				return;
 			}
-
-			state.currentPiece = newPiece;
 		},
+
 	},
 });
 
 
-export const { moveLeft, moveRight, rotate, softDrop, hardDrop, tick } = gameSlice.actions;
+export const { moveLeft, moveRight, rotate, softDrop, hardDrop, tick, startGame, receivePieces, receivePenalty } = gameSlice.actions;
 
 export default gameSlice.reducer; //la función que aplica los cambios al estado. Es lo que exportamos para conectarlo al store
