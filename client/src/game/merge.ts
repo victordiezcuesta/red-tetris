@@ -1,4 +1,3 @@
-// client/src/game/merge.ts
 import type { Board } from "./board";
 import type { Piece } from "./pieces";
 

@@ -1,6 +1,8 @@
 export const ROWS = 20;
 export const COLS = 10;
 
+export const PENALTY_CELL = 9;
+
 export type Board = number[][];
 
 export const createEmptyBoard = (): Board =>
