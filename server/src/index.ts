@@ -13,6 +13,9 @@ const httpServer = createServer(app); //Crea un servidor HTTP de Node.js y confi
 const io = new Server(httpServer, { cors: { origin: "*" } }); //creamos un servidor de Socket.IO asociado a tu servidor HTTP | cors es que intercambio de recursos entre distintos orígenes porque tenemos el back y el front en distionts puertos
 const gameManager = new GameManager(); // todas las partidas
 
+const INITIAL_PIECES = 10;
+const PIECES_BATCH = 5; //piezas por defecto cuando el cliente pide más
+
 io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un evento(que en este caso es el de conexion de un cliente con el servidor) y ejecutar una funcion | socket es objeto que representa una conexión concreta con un cliente
 	console.log(`Cliente conectado: ${socket.id}`);
 
@@ -69,7 +72,33 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 			return;
 		}
 
+		for (let i = 0; i < game.players.length; i++)
+		{
+			const player = game.players[i];
+			io.to(player.socketId).emit("pieces", game.getPieceTypes(player.socketId, INITIAL_PIECES)); //enviamos las piezas iniciales a todos los jugadores
+		}
+
 		io.to(room).emit("state", game.getState());
+	});
+
+	socket.on("needPieces", (count?: unknown) => {
+		const room = socket.data.room;
+		if (typeof room !== "string")
+			return;
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+			return;
+
+		let n = PIECES_BATCH;
+		if (typeof count === "number" && Number.isInteger(count)) //si el cliente manda un entero válido lo usamos
+			n = count;
+
+		const types = game.getPieceTypes(socket.id, n);
+		if (types.length === 0)
+			return;
+
+		socket.emit("pieces", types); //solo a este jugador
 	});
 
 	socket.on("disconnect", () => {

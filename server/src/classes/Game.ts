@@ -1,5 +1,5 @@
-import { Piece } from "./Piece.js";
 import { Player } from "./Player.js";
+import { Piece, type PieceType } from "./Piece.js";
 
 export type GameStatus = "waiting" | "playing" | "finished";
 export type AddPlayerResult = "ok" | "already_started" | "name_taken";
@@ -18,6 +18,7 @@ export type GameState = {
 };
 
 const COLS = 10;
+const MAX_PIECES_REQUEST = 20;
 
 export class Game
 {
@@ -138,6 +139,30 @@ export class Game
 
 		player.nextPieceIndex = end;
 		return result;
+	}
+
+	getPieceTypes(socketId: string, n: number): PieceType[] //devuelve un array con el numero expecifico de los tipos de las piezas que pide el cliente al servidor
+	{
+		if (this.status !== "playing")
+			return [];
+
+		const player = this.findPlayer(socketId);
+		if (player === undefined)
+			return [];
+
+		let count = n;
+		if (count < 1)
+			count = 1;
+		if (count > MAX_PIECES_REQUEST)
+			count = MAX_PIECES_REQUEST;
+
+		const pieces = this.getPieces(player, count);
+		const types: PieceType[] = [];
+		for (let i = 0; i < pieces.length; i++)
+		{
+			types.push(pieces[i].type);
+		}
+		return types;
 	}
 
 	setSpectrum(socketId: string, spectrum: number[]): void

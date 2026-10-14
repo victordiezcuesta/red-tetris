@@ -43,7 +43,7 @@ const initialState: GameState = {
 
 function getNextPiece(board: Board, pieceQueue: PieceType[]): Pick<GameState, "currentPiece" | "pieceQueue" | "status"> //Pick es un tipo de utilidad que sirve para seleccionar algunas propiedas de un tipo para no tener que devolver todas cuando no nos interesa
 {
-	const [nextType, ...remainingPieces] = pieceQueue; //guardamos en nextType el siguiente tipo de pieza que toca, y en remainingPieces el resto de piezas quitando la que hemos quitado
+	const [nextType, ...remainingPieces] = pieceQueue; //guardamos en nextType el siguiente tipo de pieza que toca, y en remainingPieces el resto de piezas quitando la que hemos quitado de la cola
 
 	if (nextType === undefined) //no tenemos nada en la cola
 	{
