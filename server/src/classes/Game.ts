@@ -4,6 +4,8 @@ import { Player } from "./Player.js";
 export type GameStatus = "waiting" | "playing" | "finished";
 export type AddPlayerResult = "ok" | "already_started" | "name_taken";
 
+const COLS = 10;
+
 export class Game
 {
 	name: string;
@@ -11,6 +13,7 @@ export class Game
 	admin: Player | null;
 	status: GameStatus;
 	pieces: Piece[];
+	isSolo: boolean;
 
 	constructor(name: string)
 	{
@@ -19,6 +22,7 @@ export class Game
 		this.admin = null;
 		this.status = "waiting";
 		this.pieces = [];
+		this.isSolo = false;
 	}
 
 	findPlayer(socketId: string): Player | undefined //buscamos al jugador por el socketid
@@ -65,10 +69,101 @@ export class Game
 			else
 				this.admin = null;
 		}
+
+		this.checkFinished(); // chequeamos si al irse un jugador hay alguno que ya es ganador
 	}
 
 	isEmpty(): boolean
 	{
 		return this.players.length === 0;
+	}
+
+	start(socketId: string): boolean
+	{
+		if (this.admin === null || this.admin.socketId !== socketId)
+			return false;
+		if (this.status === "playing")
+			return false;
+
+		for (let i = 0; i < this.players.length; i++)
+		{
+			this.players[i].reset(); //reseteamos a los players con la funcion de la clase player
+		}
+		this.pieces = [];
+		this.isSolo = this.players.length === 1;
+		this.status = "playing";
+		return true;
+	}
+
+	getPieces(player: Player, n: number): Piece[] //devolvemos la pila de las piezas que es la misma para todos los jugadores pero algunos van consumiendo antes las piezas que otros entonces devolvemos a cada jugador la pieza que le toque pero siguiendo la misma secuencia para todos los players
+	{
+		const end = player.nextPieceIndex + n;
+
+		while (this.pieces.length < end)
+			this.pieces.push(Piece.random());
+
+		const result: Piece[] = [];
+		for (let i = player.nextPieceIndex; i < end; i++)
+		{
+			result.push(this.pieces[i]);
+		}
+
+		player.nextPieceIndex = end;
+		return result;
+	}
+
+	setSpectrum(socketId: string, spectrum: number[]): void
+	{
+		const player = this.findPlayer(socketId);
+		if (player === undefined)
+			return;
+		if (spectrum.length !== COLS) //comprobamos si la info del cliente es correcta
+			return;
+
+		player.spectrum = spectrum;
+	}
+
+	markLost(socketId: string): void
+	{
+		const player = this.findPlayer(socketId);
+		if (player === undefined)
+			return;
+
+		player.isAlive = false;
+		this.checkFinished();
+	}
+
+	getWinner(): Player | null
+	{
+		if (this.status !== "finished" || this.isSolo)
+			return null;
+
+		for (let i = 0; i < this.players.length; i++)
+		{
+			if (this.players[i].isAlive)
+				return this.players[i];
+		}
+		return null;
+	}
+
+	private checkFinished(): void
+	{
+		if (this.status !== "playing")
+			return;
+
+		let alive = 0;
+		for (let i = 0; i < this.players.length; i++)
+		{
+			if (this.players[i].isAlive)
+				alive++;
+		}
+
+		if (this.isSolo)
+		{
+			if (alive === 0)
+				this.status = "finished";
+		}
+		else if (alive <= 1) // finalizamos cuando queda un jugador vivo
+			this.status = "finished";
 	}
 }
