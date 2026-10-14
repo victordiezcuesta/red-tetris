@@ -6,6 +6,8 @@ import { GameManager } from "./classes/GameManager.js";
 import { Player } from "./classes/Player.js";
 import { isValidName } from "./utils/validate.js";
 
+import type { Game } from "./classes/Game.js"; //importamos solo el tipo no ninguna variable ni funcion
+
 const PORT = Number(process.env.PORT ?? 3000);
 
 const app = express(); //app sera el comunicador entre el cliente y el servidor de las peticiones
@@ -15,6 +17,12 @@ const gameManager = new GameManager(); // todas las partidas
 
 const INITIAL_PIECES = 10;
 const PIECES_BATCH = 5; //piezas por defecto cuando el cliente pide más
+
+function emitGameOver(room: string, game: Game): void
+{
+	const winner = game.getWinner();
+	io.to(room).emit("gameOver", { winner: winner === null ? null : winner.name });
+}
 
 io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un evento(que en este caso es el de conexion de un cliente con el servidor) y ejecutar una funcion | socket es objeto que representa una conexión concreta con un cliente
 	console.log(`Cliente conectado: ${socket.id}`);
@@ -101,11 +109,8 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		socket.emit("pieces", types); //solo a este jugador
 	});
 
-	socket.on("disconnect", () => {
-		console.log(`Cliente desconectado: ${socket.id}`);
-
+	socket.on("spectrum", (data: unknown) => {
 		const room = socket.data.room;
-
 		if (typeof room !== "string")
 			return;
 
@@ -113,9 +118,47 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		if (game === undefined)
 			return;
 
+		if (!Array.isArray(data)) //comprobacion delo que envia el cliente
+			return;
+
+		if (!game.setSpectrum(socket.id, data))
+			return;
+
+		io.to(room).emit("state", game.getState()); //todos ven el spectrum actualizado
+	});
+
+	socket.on("lost", () => {
+		const room = socket.data.room;
+		if (typeof room !== "string")
+			return;
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+			return;
+
+		if (!game.markLost(socket.id))
+			return;
+
+		io.to(room).emit("state", game.getState());
+		if (game.status === "finished")
+			emitGameOver(room, game);
+	});
+
+	socket.on("disconnect", () => {
+		const room = socket.data.room;
+		if (typeof room !== "string")
+			return;
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+			return;
+
+		const wasPlaying = game.status === "playing"; //lo guardamos antes de quitar al jugador
 		game.removePlayer(socket.id);
 
 		io.to(room).emit("state", game.getState());
+		if (wasPlaying && game.status === "finished")
+			emitGameOver(room, game);
 
 		gameManager.removeIfEmpty(room);
 	});

@@ -18,6 +18,7 @@ export type GameState = {
 };
 
 const COLS = 10;
+const ROWS = 20;
 const MAX_PIECES_REQUEST = 20;
 
 export class Game
@@ -147,7 +148,7 @@ export class Game
 			return [];
 
 		const player = this.findPlayer(socketId);
-		if (player === undefined)
+		if (player === undefined || !player.isAlive)
 			return [];
 
 		let count = n;
@@ -165,25 +166,40 @@ export class Game
 		return types;
 	}
 
-	setSpectrum(socketId: string, spectrum: number[]): void
+	setSpectrum(socketId: string, spectrum: number[]): boolean //devuelve true si hemos guardado el spectrum
 	{
-		const player = this.findPlayer(socketId);
-		if (player === undefined)
-			return;
-		if (spectrum.length !== COLS) //comprobamos si la info del cliente es correcta
-			return;
+		if (this.status !== "playing")
+			return false;
 
-		player.spectrum = spectrum;
+		const player = this.findPlayer(socketId);
+		if (player === undefined || !player.isAlive)
+			return false;
+
+		if (spectrum.length !== COLS) //comprobamos si la info del cliente es correcta
+			return false;
+
+		for (let i = 0; i < spectrum.length; i++)
+		{
+			if (!Number.isInteger(spectrum[i]) || spectrum[i] < 0 || spectrum[i] > ROWS)
+				return false;
+		}
+
+		player.spectrum = [...spectrum]; //guardamos una copia
+		return true;
 	}
 
-	markLost(socketId: string): void
+	markLost(socketId: string): boolean //devuelve true si hemos marcado a un jugador como perdido
 	{
+		if (this.status !== "playing")
+			return false;
+
 		const player = this.findPlayer(socketId);
-		if (player === undefined)
-			return;
+		if (player === undefined || !player.isAlive)
+			return false;
 
 		player.isAlive = false;
 		this.checkFinished();
+		return true;
 	}
 
 	getWinner(): Player | null
