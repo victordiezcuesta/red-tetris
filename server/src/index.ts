@@ -48,6 +48,30 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		io.to(data.room).emit("state", game.getState()); //enviamos a todos los sockets de la partida el estado del juego
 	});
 
+	socket.on("start", () => {
+		const room = socket.data.room;
+		if (typeof room !== "string")
+		{
+			socket.emit("startError", "not_in_room");
+			return;
+		}
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+		{
+			socket.emit("startError", "game_not_found");
+			return;
+		}
+
+		if (!game.start(socket.id))
+		{
+			socket.emit("startError", "cannot_start");
+			return;
+		}
+
+		io.to(room).emit("state", game.getState());
+	});
+
 	socket.on("disconnect", () => {
 		console.log(`Cliente desconectado: ${socket.id}`);
 
