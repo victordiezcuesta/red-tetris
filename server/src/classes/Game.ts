@@ -4,6 +4,19 @@ import { Player } from "./Player.js";
 export type GameStatus = "waiting" | "playing" | "finished";
 export type AddPlayerResult = "ok" | "already_started" | "name_taken";
 
+export type PlayerState = {
+	name: string;
+	spectrum: number[];
+	isAlive: boolean;
+	isAdmin: boolean;
+};
+
+export type GameState = {
+	room: string;
+	status: GameStatus;
+	players: PlayerState[];
+};
+
 const COLS = 10;
 
 export class Game
@@ -76,6 +89,21 @@ export class Game
 	isEmpty(): boolean
 	{
 		return this.players.length === 0;
+	}
+
+	getState(): GameState //estado publico de la partida para no poner publico por ejempllo el id del socket del player
+	{
+		const players: PlayerState[] = [];
+		for (let i = 0; i < this.players.length; i++)
+		{
+			players.push({
+				name: this.players[i].name,
+				spectrum: [...this.players[i].spectrum], // copiamos el spectrum
+				isAlive: this.players[i].isAlive,
+				isAdmin: this.players[i] === this.admin,
+			});
+		}
+		return { room: this.name, status: this.status, players: players };
 	}
 
 	start(socketId: string): boolean
