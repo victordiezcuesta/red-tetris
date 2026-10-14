@@ -42,7 +42,6 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 			return;
 		}
 
-		// 6. todo bien
 		socket.data.room = data.room; //actualizamos la sala en el socket
 		socket.join(data.room); //enlaza cada socket de cada jugador en una sola sala
 		socket.emit("joined", { room: data.room, name: data.name }); // enviamos al cliente mediante el socket del jugador que se ha unido a una partida con un nombre
@@ -51,7 +50,23 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 
 	socket.on("disconnect", () => {
 		console.log(`Cliente desconectado: ${socket.id}`);
+
+		const room = socket.data.room;
+
+		if (typeof room !== "string")
+			return;
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+			return;
+
+		game.removePlayer(socket.id);
+
+		io.to(room).emit("state", game.getState());
+
+		gameManager.removeIfEmpty(room);
 	});
+
 });
 
 httpServer.listen(PORT, () => {
