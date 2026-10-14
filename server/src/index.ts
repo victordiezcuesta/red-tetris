@@ -1,26 +1,59 @@
-import express from "express";
-import { createServer } from "node:http";
+import express from "express"; //libreria de node con la que vamos a atender las peticiones que llegan del cliente como puede ser crea una sala o eliminala entre otras cosas
+import { createServer } from "node:http"; 
 import { Server } from "socket.io";
+
+import { GameManager } from "./classes/GameManager.js";
+import { Player } from "./classes/Player.js";
+import { isValidName } from "./utils/validate.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const app = express(); //app sera el comunicador entre el cliente y el servidor de las peticiones
+const httpServer = createServer(app); //Crea un servidor HTTP de Node.js y configura app como la función que procesará las peticiones HTTP recibidas
+const io = new Server(httpServer, { cors: { origin: "*" } }); //creamos un servidor de Socket.IO asociado a tu servidor HTTP | cors es que intercambio de recursos entre distintos orígenes porque tenemos el back y el front en distionts puertos
+const gameManager = new GameManager(); // todas las partidas
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un evento(que en este caso es el de conexion de un cliente con el servidor) y ejecutar una funcion | socket es objeto que representa una conexión concreta con un cliente
+	console.log(`Cliente conectado: ${socket.id}`);
 
-io.on("connection", (socket) => {
-  console.log(`Cliente conectado: ${socket.id}`);
-  socket.emit("hello", "Hola desde el servidor");
+	socket.on("join", (data: { room?: unknown; name?: unknown }) => {
+		
+		if (socket.data.room !== undefined) //si ya esta en la sala lo ignoramos
+			return;
 
-  socket.on("disconnect", () => {
-    console.log(`Cliente desconectado: ${socket.id}`);
-  });
+		if (typeof data?.room !== "string" || typeof data?.name !== "string")
+		{
+			socket.emit("joinError", "invalid_name");
+			return;
+		}
+		if (!isValidName(data.room) || !isValidName(data.name))
+		{
+			socket.emit("joinError", "invalid_name");
+			return;
+		}
+
+		const game = gameManager.getOrCreate(data.room);
+
+		const result = game.addPlayer(new Player(data.name, socket.id));
+		if (result !== "ok")
+		{
+			gameManager.removeIfEmpty(data.room);
+			socket.emit("joinError", result);
+			return;
+		}
+
+		// 6. todo bien
+		socket.data.room = data.room; //actualizamos la sala en el socket
+		socket.join(data.room); //enlaza cada socket de cada jugador en una sola sala
+		socket.emit("joined", { room: data.room, name: data.name }); // enviamos al cliente mediante el socket del jugador que se ha unido a una partida con un nombre
+		io.to(data.room).emit("state", game.getState()); //enviamos a todos los sockets de la partida el estado del juego
+	});
+
+	socket.on("disconnect", () => {
+		console.log(`Cliente desconectado: ${socket.id}`);
+	});
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+	console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
