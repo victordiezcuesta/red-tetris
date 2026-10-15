@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from "zustand"; //zustand es una biblioteca para la gestión del estado global en aplicaciones Reac
 
 import { createEmptyBoard, type Board } from "../game/board";
 import type { Piece, PieceType } from "../game/pieces";
@@ -71,6 +71,7 @@ function getNextPiece(board: Board, pieceQueue: PieceType[]): Pick<GameState, "c
 	};
 }
 
+//es un hook que Zustand crea para que tus componentes puedan acceder al estado compartido de la partida
 export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>() es una función de Zustand que sirve para crear un store (almacén de estado) del tipo GameStore
 	...initialState, //copiamos los valores de initialState a useGameStore junto con el set
 
@@ -114,8 +115,15 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		if (state.status !== "playing" || state.currentPiece === null)
 			return state;
 
+		const piece = dropPieceDown(state.board, state.currentPiece);
+
+		//mergeamos la pieza y si completamos una fila la limpiamos
+		const mergedBoard = mergePiece(state.board, piece);
+		const result = clearLines(mergedBoard);
+
 		return {
-			currentPiece: dropPieceDown(state.board, state.currentPiece),
+			board: result.board,
+			...getNextPiece(result.board, state.pieceQueue),
 		};
 	}),
 

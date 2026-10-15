@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"; //son hooks que son funciones especiales que te permiten utilizar funcionalidades de React dentro de tus componentes
 import { Route, Routes, useParams } from "react-router-dom";
 
 import { socket } from "./socket/socket";
 import type { JoinError, RoomState } from "./socket/events";
 
+import "./App.css";
+
 import { useGameStore } from "./store/gameStore";
 import type { PieceType } from "./game/pieces";
-
+import { GameBoard } from "./game/GameBoard";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
 
@@ -38,9 +40,81 @@ function RoomPage()
 		name: string;
 	} | null>(null); //puede ser tambien null y lo inicializamos asi
 
-	const receivePieces = useGameStore((state) => state.receivePieces);
-	const startGame = useGameStore((state) => state.startGame);
+	const board = useGameStore((state) => state.board);
+	const currentPiece = useGameStore((state) => state.currentPiece);
+	const pieceQueueLength = useGameStore((state) => state.pieceQueue.length);
 	const gameStatus = useGameStore((state) => state.status);
+	const receivePieces = useGameStore((state) => state.receivePieces);
+	const receivePenalty = useGameStore((state) => state.receivePenalty);
+	const startGame = useGameStore((state) => state.startGame);
+	const moveLeft = useGameStore((state) => state.moveLeft);
+	const moveRight = useGameStore((state) => state.moveRight);
+	const rotate = useGameStore((state) => state.rotate);
+	const softDrop = useGameStore((state) => state.softDrop);
+	const hardDrop = useGameStore((state) => state.hardDrop);
+	const tick = useGameStore((state) => state.tick);
+
+	useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (gameStatus !== "playing")
+				return;
+
+			switch (event.key)
+			{
+				case "ArrowLeft":
+					event.preventDefault(); //evitamos que el navegador mueva a la derecha la pantalla
+					moveLeft();
+					break;
+
+				case "ArrowRight":
+					event.preventDefault();
+					moveRight();
+					break;
+
+				case "ArrowUp":
+					event.preventDefault();
+					rotate();
+					break;
+
+				case "ArrowDown":
+					event.preventDefault();
+					softDrop();
+					break;
+
+				case " ":
+					event.preventDefault();
+					hardDrop();
+					break;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);//detectar cuándo el usuario pulsa una tecla del teclado y ejecutar la función
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [gameStatus, moveLeft, moveRight, rotate, softDrop, hardDrop]); //ejecuta el useeffect cuando cambie algo de esto
+
+	useEffect(() => {
+		if (gameStatus !== "playing")
+			return;
+
+		const intervalId = window.setInterval(() => {
+			tick();
+		}, 800); //vamos bajando la pieza cada 800 ms
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, [gameStatus, tick]);
+
+	useEffect(() => {
+		if (gameStatus !== "playing")
+			return;
+
+		if (pieceQueueLength === 0 && currentPiece === null)
+			socket.emit("needPieces", 5);
+	}, [gameStatus, pieceQueueLength, currentPiece]);
 
 	useEffect(() =>
 	{
@@ -103,11 +177,18 @@ function RoomPage()
 			if (!active)
 				return;
 
-			if (gameStatus === "waiting") // Inicializamos el tablero al recibir las primeras piezas
+			if (useGameStore.getState().status === "waiting") // Inicializamos el tablero al recibir las primeras piezas
 				startGame();
 
 			
 			receivePieces(pieces); // Guardamos en Zustand las piezas recibidas del servidor
+		};
+
+		const handlePenalty = (count: number) => {
+			if (!active)
+				return;
+
+			receivePenalty(count);
 		};
 
 		const handleDisconnect = () =>
@@ -127,6 +208,7 @@ function RoomPage()
 		socket.on("connect_error", handleConnectError);
 		socket.on("state", handleState);
 		socket.on("pieces", handlePieces);
+		socket.on("penalty", handlePenalty);
 		socket.on("disconnect", handleDisconnect);
 
 		if (socket.connected) //si ya existe la conexion con el socket ejecutamos directamente handleConnect
@@ -145,6 +227,7 @@ function RoomPage()
 			socket.off("connect_error", handleConnectError);
 			socket.off("state", handleState);
 			socket.off("pieces", handlePieces);
+			socket.off("penalty", handlePenalty);
 			socket.off("disconnect", handleDisconnect);
 
 			socket.disconnect(); //cierra la conexión cuando abandonamos la ruta
@@ -193,6 +276,35 @@ function RoomPage()
 					<button onClick={() => socket.emit("start")}>
 						Iniciar partida
 					</button>
+			)}
+
+			{roomState !== null && roomState.status === "playing" && (
+				<section className="game-layout">
+					<div>
+						<h2>Tu tablero</h2>
+
+						<GameBoard
+							board={board}
+							currentPiece={currentPiece}
+						/>
+
+						{gameStatus === "lost" && (
+							<p role="alert">Has perdido la partida.</p>
+						)}
+					</div>
+
+					<div className="game-info">
+						<h2>Controles</h2>
+
+						<ul className="game-controls">
+							<li>← Mover a la izquierda</li>
+							<li>→ Mover a la derecha</li>
+							<li>↑ Rotar la pieza</li>
+							<li>↓ Descenso rápido</li>
+							<li>Espacio: caída instantánea</li>
+						</ul>
+					</div>
+				</section>
 			)}
 
 			{status === "error" && (
