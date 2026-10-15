@@ -17,6 +17,11 @@ export type GameState = {
 	players: PlayerState[];
 };
 
+export type Penalty = {
+	count: number; // filas de penalización a añadir
+	targets: string[]; // socketIds de quienes las reciben
+};
+
 const COLS = 10;
 const ROWS = 20;
 const MAX_PIECES_REQUEST = 20;
@@ -186,6 +191,31 @@ export class Game
 
 		player.spectrum = [...spectrum]; //guardamos una copia
 		return true;
+	}
+
+	getPenalty(socketId: string, cleared: number): Penalty //calcula cuantas filas de penalizacion genera una jugada y a quien se las mandamos
+	{
+		const none: Penalty = { count: 0, targets: [] };
+
+		if (this.status !== "playing")
+			return none;
+
+		const sender = this.findPlayer(socketId);
+		if (sender === undefined || !sender.isAlive)
+			return none;
+
+		if (!Number.isInteger(cleared) || cleared < 2 || cleared > 4)
+			return none;
+
+		const targets: string[] = [];
+		for (let i = 0; i < this.players.length; i++)
+		{
+			const player = this.players[i];
+			if (player.socketId !== socketId && player.isAlive)
+				targets.push(player.socketId);
+		}
+
+		return { count: cleared - 1, targets: targets };
 	}
 
 	markLost(socketId: string): boolean //devuelve true si hemos marcado a un jugador como perdido

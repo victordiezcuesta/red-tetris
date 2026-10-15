@@ -109,6 +109,25 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		socket.emit("pieces", types); //solo a este jugador
 	});
 
+	socket.on("linesCleared", (cleared: unknown) => {
+		const room = socket.data.room;
+		if (typeof room !== "string")
+			return;
+
+		const game = gameManager.get(room);
+		if (game === undefined)
+			return;
+
+		if (typeof cleared !== "number")
+			return;
+
+		const penalty = game.getPenalty(socket.id, cleared);
+		for (let i = 0; i < penalty.targets.length; i++)
+		{
+			io.to(penalty.targets[i]).emit("penalty", penalty.count); //solo a cada rival
+		}
+	});
+
 	socket.on("spectrum", (data: unknown) => {
 		const room = socket.data.room;
 		if (typeof room !== "string")
