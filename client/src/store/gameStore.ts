@@ -10,6 +10,8 @@ import { clearLines } from "../game/lines";
 import { hasCollision } from "../game/collision";
 import { addPenaltyLines } from "../game/penalty";
 
+import { socket } from "../socket/socket";
+
 export type GameStatus = "waiting" | "playing" | "lost";
 
 export type GameState =
@@ -121,6 +123,9 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		const mergedBoard = mergePiece(state.board, piece);
 		const result = clearLines(mergedBoard);
 
+		if (result.rowsCleared > 0)
+			socket.emit("linesCleared", result.rowsCleared);
+
 		return {
 			board: result.board,
 			...getNextPiece(result.board, state.pieceQueue),
@@ -143,6 +148,9 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		//mergeamos la pieza y si completamos una fila la limpiamos
 		const mergedBoard = mergePiece(state.board, piece);
 		const result = clearLines(mergedBoard);
+
+		if (result.rowsCleared > 0)
+			socket.emit("linesCleared", result.rowsCleared);
 
 		return {
 			board: result.board,
