@@ -1,3 +1,5 @@
+//vite es una herramienta que traduce y empaqueta tu código para el navegador
+
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 

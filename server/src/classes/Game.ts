@@ -57,7 +57,7 @@ export class Game
 
 	addPlayer(player: Player): AddPlayerResult
 	{
-		if (this.status !== "waiting")
+		if (this.status === "playing")
 			return "already_started";
 
 		for (let i = 0; i < this.players.length; i++) //comprobamos si ya tenemos un player con ese nombre
