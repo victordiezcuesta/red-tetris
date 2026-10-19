@@ -2,14 +2,15 @@ import { useEffect, useState } from "react"; //son hooks que son funciones espec
 import { Route, Routes, useParams } from "react-router-dom";
 
 import { socket } from "./socket/socket";
-import type { JoinError, RoomState, StartError } from "./socket/events";
+import type { JoinError, RoomState, StartError, PlayerState } from "./socket/events";
 
 import "./App.css";
 
 import { useGameStore } from "./store/gameStore";
 import type { PieceType } from "./game/pieces";
 import { GameBoard } from "./game/GameBoard";
-import { getSpectrum } from "./game/spectrum";
+import { getSpectrum, getOpponents } from "./game/spectrum";
+import { SpectrumView } from "./game/SpectrumView";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
 
@@ -58,10 +59,13 @@ function RoomPage()
 		winner: string | null
 	} | null>(null);
 
+	//variables del tipo GameState
 	const board = useGameStore((state) => state.board);
 	const currentPiece = useGameStore((state) => state.currentPiece);
 	const pieceQueueLength = useGameStore((state) => state.pieceQueue.length);
 	const gameStatus = useGameStore((state) => state.status);
+
+	//funciones del tipo GameActions
 	const receivePieces = useGameStore((state) => state.receivePieces);
 	const receivePenalty = useGameStore((state) => state.receivePenalty);
 	const startGame = useGameStore((state) => state.startGame);
@@ -291,6 +295,10 @@ function RoomPage()
 		};
 	}, [room, playerName]);
 
+	let opponents: PlayerState[] = [];
+	if (roomState !== null && playerName !== undefined)
+		opponents = getOpponents(roomState.players, playerName);
+
 	return (
 		<main>
 			<h1>Red Tetris</h1>
@@ -364,6 +372,21 @@ function RoomPage()
 							</p>
 						)}
 					</div>
+
+					{opponents.length > 0 && (
+						<div className="spectrum-list">
+							<h2>Rivales</h2>
+
+							{opponents.map((opponent) => (
+								<SpectrumView
+									key={opponent.name}
+									name={opponent.name}
+									spectrum={opponent.spectrum}
+									isAlive={opponent.isAlive}
+								/>
+							))}
+						</div>
+					)}
 
 					<div className="game-info">
 						<h2>Controles</h2>

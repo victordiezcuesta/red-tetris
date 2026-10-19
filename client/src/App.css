@@ -248,3 +248,45 @@
 		width: 100%;
 	}
 }
+
+.spectrum-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 140px;
+}
+
+.spectrum h3 {
+	margin: 0 0 6px;
+	font-size: 14px;
+	text-align: left;
+	overflow-wrap: anywhere;
+}
+
+.spectrum-grid {
+	display: grid;
+	grid-template-columns: repeat(10, 1fr);
+	gap: 2px;
+	width: 120px;
+	height: 120px;
+	padding: 2px;
+	background: #111827;
+	border: 2px solid #475569;
+	box-sizing: border-box;
+}
+
+.spectrum-column {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end; /* la barra crece desde abajo */
+	min-width: 0;
+}
+
+.spectrum-bar {
+	background: #38bdf8;
+	border-radius: 1px;
+}
+
+.spectrum-dead {
+	opacity: 0.4;
+}

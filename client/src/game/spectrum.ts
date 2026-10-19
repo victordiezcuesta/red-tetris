@@ -1,4 +1,5 @@
-import { COLS, type Board } from "./board";
+import { COLS, ROWS, type Board } from "./board";
+import type { PlayerState } from "../socket/events";
 
 export const getSpectrum = (board: Board): number[] => {
 	const spectrum: number[] = [];
@@ -20,4 +21,25 @@ export const getSpectrum = (board: Board): number[] => {
 	}
 
 	return spectrum;
+};
+
+export const getBarHeightPercent = (height: number): number => {
+	if (height <= 0)
+		return 0;
+	if (height >= ROWS)
+		return 100;
+	return (height / ROWS) * 100;
+};
+
+// Devuelve todos los jugadores menos nosotros
+export const getOpponents = (players: PlayerState[], myName: string): PlayerState[] => {
+	const opponents: PlayerState[] = [];
+
+	for (let i = 0; i < players.length; i++)
+	{
+		if (players[i].name !== myName)
+			opponents.push(players[i]);
+	}
+
+	return opponents;
 };
