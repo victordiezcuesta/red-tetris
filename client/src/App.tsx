@@ -9,6 +9,7 @@ import "./App.css";
 import { useGameStore } from "./store/gameStore";
 import type { PieceType } from "./game/pieces";
 import { GameBoard } from "./game/GameBoard";
+import { getSpectrum } from "./game/spectrum";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
 
@@ -99,6 +100,13 @@ function RoomPage()
 		if (gameStatus !== "playing")
 			return;
 
+		socket.emit("spectrum", getSpectrum(board)); //enviamos las alturas de cada columna al servidor
+	}, [gameStatus, board]);
+
+	useEffect(() => {
+		if (gameStatus !== "playing")
+			return;
+
 		const intervalId = window.setInterval(() => {
 			tick();
 		}, 800); //vamos bajando la pieza cada 800 ms
@@ -115,6 +123,13 @@ function RoomPage()
 		if (pieceQueueLength === 0 && currentPiece === null)
 			socket.emit("needPieces", 5);
 	}, [gameStatus, pieceQueueLength, currentPiece]);
+
+	useEffect(() => {
+		if (gameStatus !== "lost")
+			return;
+
+		socket.emit("lost"); //avisamos al servidor de que hemos perdido
+	}, [gameStatus]);
 
 	useEffect(() =>
 	{
@@ -177,7 +192,8 @@ function RoomPage()
 			if (!active)
 				return;
 
-			if (useGameStore.getState().status === "waiting") // Inicializamos el tablero al recibir las primeras piezas
+			const currentStatus = useGameStore.getState().status;
+			if (currentStatus === "waiting" || currentStatus === "lost") // Inicializamos el tablero al recibir las primeras piezas
 				startGame();
 
 			
