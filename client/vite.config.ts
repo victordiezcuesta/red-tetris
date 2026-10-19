@@ -1,4 +1,5 @@
 //vite es una herramienta que traduce y empaqueta tu código para el navegador
+//Express no entiende .tsx, así que Vite lo traduce una vez, antes de arrancar el servidor. El resultado queda guardado en client/dist
 
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";

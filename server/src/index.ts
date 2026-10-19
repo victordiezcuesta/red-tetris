@@ -1,6 +1,7 @@
-import express from "express"; //libreria de node con la que vamos a atender las peticiones que llegan del cliente como puede ser crea una sala o eliminala entre otras cosas
+import express from "express"; //libreria de node con la que vamos a atender las peticiones que llegan del cliente(navegador). Lo que va a hacer al final es hacer que el servidor del cliente deje de existir y solo exista el servidor del back
 import { createServer } from "node:http"; 
 import { Server } from "socket.io";
+import { join } from "node:path";
 
 import { GameManager } from "./classes/GameManager.js";
 import { Player } from "./classes/Player.js";
@@ -11,6 +12,14 @@ import type { Game } from "./classes/Game.js"; //importamos solo el tipo no ning
 const PORT = Number(process.env.PORT ?? 3000);
 
 const app = express(); //app sera el comunicador entre el cliente y el servidor de las peticiones
+const CLIENT_DIST = join(import.meta.dirname, "../../client/dist"); //import.meta.dirname es la carpeta donde está el archivo actual
+/*Primero express.static: si la URL es un archivo real (/assets/index-xxxx.js), lo devuelve y termina
+Si no lo es, pasa al app.get("/{*splat}"), que devuelve index.html()*/
+app.use(express.static(CLIENT_DIST)); // CLIENT_DIST: client/dist | si llega una petición como /assets/index-xxxx.js, busca ese archivo dentro de client/dist y lo devuelve. Para / devuelve index.html automáticamente.
+app.get("/{*splat}", (_req, res) => { //app.get("/{*splat}" para cualquier URL con método GET | _req tiene el guion bajo para que typescript no se queje de parametros sin usar
+	res.sendFile(join(CLIENT_DIST, "index.html")); //responde con el contenido de ese archivo. Necesita una ruta absoluta, y la nuestra lo es porque CLIENT_DIST parte de import.meta.dirname
+});
+
 const httpServer = createServer(app); //Crea un servidor HTTP de Node.js y configura app como la función que procesará las peticiones HTTP recibidas
 const io = new Server(httpServer, { cors: { origin: "*" } }); //creamos un servidor de Socket.IO asociado a tu servidor HTTP | cors es que intercambio de recursos entre distintos orígenes porque tenemos el back y el front en distionts puertos
 const gameManager = new GameManager(); // todas las partidas

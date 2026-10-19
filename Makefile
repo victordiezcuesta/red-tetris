@@ -1,5 +1,6 @@
-.PHONY: up down build logs test clean re
+.PHONY: up down build logs test clean re eval eval-logs eval-clean
 
+#DESARROLLO TENEMOS DOS SERVIDORES (CLIENT 5173 Y SERVIDOR 3000)
 up:
 	docker compose up -d
 
@@ -20,3 +21,13 @@ clean:
 	docker compose down -v --rmi local
 
 re: clean build up
+
+#CORRECCION PORQUE SOLO FORMA UN SERVIDOR CON EXPRESS QUE SIRVA TODO (PORT 3000)
+eval:
+	docker compose -f docker-compose.prod.yml up -d --build
+
+eval-logs:
+	docker compose -f docker-compose.prod.yml logs -f	
+
+eval-clean:
+	docker compose -f docker-compose.prod.yml down
