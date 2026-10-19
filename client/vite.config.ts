@@ -6,6 +6,15 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "bundle.js", //cambiamoss el nombre al js que generamos al traducir el tsx a js para que express lo entienda, lo llamamos asi porque lo exige el subject
+      },
+    },
+  },
+
   test: {
     environment: "jsdom", //jsdom simula un navegador con windows, etc...
     setupFiles: ["./tests/setup.ts"], //fichero que se ejecuta antes de cada fichero de tests.
