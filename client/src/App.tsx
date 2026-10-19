@@ -142,7 +142,7 @@ function RoomPage()
 		if (gameStatus !== "playing")
 			return;
 
-		if (pieceQueueLength === 0 && currentPiece === null)
+		if (pieceQueueLength < 3)
 			socket.emit("needPieces", 5);
 	}, [gameStatus, pieceQueueLength, currentPiece]);
 
