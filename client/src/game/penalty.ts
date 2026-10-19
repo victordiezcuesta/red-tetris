@@ -18,6 +18,25 @@ export function getPenaltyCount(cleared: number): number
 	return cleared - 1;
 }
 
+export function hasRowOverflow(board: Board, count: number): boolean
+{
+	let safeCount = count;
+
+	if (safeCount < 0)
+		safeCount = 0;
+	if (safeCount > board.length)
+		safeCount = board.length;
+
+	for (let row = 0; row < safeCount; row++)
+	{
+		if (board[row].some((cell) => cell !== 0)) //comprobamos si al menos una celda de esa fila contiene un valor distinto de 0
+			return true;
+	}
+
+	return false;
+
+}
+
 export function addPenaltyLines(board: Board, count: number): Board
 {
 	let safeCount = count; //numero de filas que son penalizadas

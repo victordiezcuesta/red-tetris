@@ -8,7 +8,7 @@ import { dropPieceDown } from "../game/dropPieceDown";
 import { mergePiece } from "../game/merge";
 import { clearLines } from "../game/lines";
 import { hasCollision } from "../game/collision";
-import { addPenaltyLines } from "../game/penalty";
+import { addPenaltyLines, hasRowOverflow } from "../game/penalty";
 
 import { socket } from "../socket/socket";
 
@@ -183,8 +183,9 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		if (state.status !== "playing")
 			return state;
 
+		const rowOverflow = hasRowOverflow(state.board, count);
 		const board = addPenaltyLines(state.board, count);
-		if (state.currentPiece !== null && hasCollision(board, state.currentPiece))
+		if (rowOverflow || (state.currentPiece !== null && hasCollision(board, state.currentPiece)))
 		{
 			return {
 				board,
