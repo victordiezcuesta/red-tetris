@@ -43,3 +43,27 @@ export const getOpponents = (players: PlayerState[], myName: string): PlayerStat
 
 	return opponents;
 };
+
+// Altura de la columna más alta (para "Altura máx. 10 / 20")
+export const getMaxHeight = (spectrum: number[]): number => {
+	let max = 0;
+
+	for (let i = 0; i < spectrum.length; i++)
+	{
+		if (spectrum[i] > max)
+			max = spectrum[i];
+	}
+
+	return max;
+};
+
+// Devuelve true si el jugador con ese nombre es el anfitrión
+export const isAdminPlayer = (players: PlayerState[], name: string): boolean => {
+	for (let i = 0; i < players.length; i++)
+	{
+		if (players[i].name === name && players[i].isAdmin)
+			return true;
+	}
+
+	return false;
+};

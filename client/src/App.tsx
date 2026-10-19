@@ -9,10 +9,18 @@ import "./App.css";
 import { useGameStore } from "./store/gameStore";
 import type { PieceType } from "./game/pieces";
 import { GameBoard } from "./game/GameBoard";
-import { getSpectrum, getOpponents } from "./game/spectrum";
+import { getSpectrum, getOpponents, isAdminPlayer } from "./game/spectrum";
 import { SpectrumView } from "./game/SpectrumView";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
+
+const CONTROLS = [
+	{ key: "←", text: "Mover a la izquierda" },
+	{ key: "→", text: "Mover a la derecha" },
+	{ key: "↑", text: "Rotar la pieza" },
+	{ key: "↓", text: "Descenso rápido" },
+	{ key: "ESP", text: "Caída instantánea" },
+];
 
 function getJoinErrorMessage(error: JoinError): string
 {
@@ -37,6 +45,32 @@ function getStartErrorMessage(error: StartError): string
 			return "The room does not exist.";
 		case "cannot_start":
 			return "Only the host can start the game, and not while it is running.";
+	}
+}
+
+function getRoomStatusLabel(status: string): string
+{
+	switch (status)
+	{
+		case "playing":
+			return "EN JUEGO";
+		case "finished":
+			return "FINALIZADA";
+		default:
+			return "EN ESPERA";
+	}
+}
+
+function getLinkLabel(status: ConnectionStatus): string
+{
+	switch (status)
+	{
+		case "connecting":
+			return "CONECTANDO";
+		case "joined":
+			return "ENLACE ACTIVO";
+		case "error":
+			return "SIN ENLACE";
 	}
 }
 
@@ -299,83 +333,111 @@ function RoomPage()
 	if (roomState !== null && playerName !== undefined)
 		opponents = getOpponents(roomState.players, playerName);
 
+	const isAdmin = roomState !== null && joined !== null
+		&& isAdminPlayer(roomState.players, joined.name);
+
 	return (
-		<main>
-			<h1>Red Tetris</h1>
+		<div className="app">
+			<header className="topbar">
+				<div className="topbar-group">
+					<span className="brand">RED-TETRIS</span>
+					<span className="topbar-divider" />
+					<span className="topbar-label">SALA</span>
+					<span className="topbar-value">{room}</span>
+				</div>
 
-			<p>Sala solicitada: {room}</p>
-			<p>Jugador solicitado: {playerName}</p>
+				<div className="topbar-group">
+					<span className={`link link-${status}`}>
+						<span className="link-dot" />
+						{getLinkLabel(status)}
+					</span>
+					<span className="topbar-label">JUGADOR</span>
+					<span className="topbar-value">{playerName}</span>
+					{isAdmin && <span className="badge badge-admin">ANFITRIÓN</span>}
+				</div>
+			</header>
 
-			{/*role sirve para indicar a las tecnologías de asistencia qué tipo de información representa un elemento HTML*/}
-			<p role="status">{message}</p>
+			<main className="mission">
+				{/* ---------- Columna 1: jugadores + controles ---------- */}
+				<section className="column column-side">
+					<section className="column">
+						<h2 className="section-title">01 · JUGADORES</h2>
 
-			{status === "joined" && joined !== null && (
-				<section>
-					<h2>¡Bienvenido a la partida!</h2>
-					<p>Sala confirmada: {joined.room}</p>
-					<p>Nombre confirmado: {joined.name}</p>
+						<ul className="player-list">
+							{roomState !== null && roomState.players.map((player, index) => (
+								<li
+									key={player.name}
+									className={`player-row${player.name === playerName ? " player-me" : ""}${player.isAlive ? "" : " player-out"}`}
+								>
+									<span className="player-index">{String(index + 1).padStart(2, "0")}</span>
+									<span className="player-name">{player.name}</span>
+									{player.isAdmin && <span className="badge">HOST</span>}
+									{!player.isAlive && <span className="badge badge-out">OUT</span>}
+								</li>
+							))}
+						</ul>
+
+						<h2 className="section-title section-spaced">02 · CONTROLES</h2>
+
+						<div className="controls">
+							{CONTROLS.map((control) => (
+								<div key={control.key} className="control-row">
+									<kbd>{control.key}</kbd>
+									<span>{control.text}</span>
+								</div>
+							))}
+						</div>
+					</section>
 				</section>
-			)}
-
-			{roomState !== null && (
-				<section>
-					<h2>Sala: {roomState.room}</h2>
-
-					<p>Estado de la partida: {roomState.status}</p>
-
-					<h3>Jugadores</h3>
-
-					<ul>
-						{roomState.players.map((player) => (
-						<li key={player.name}>
-							{player.name}
-							{player.isAdmin && " (Anfitrión)"}
-							{!player.isAlive && " (Eliminado)"}
-						</li>
-						))}
-					</ul>
-				</section>
-			)}
-
-			{roomState !== null && roomState.status !== "playing" && roomState.players.some((player) => player.name === joined?.name && player.isAdmin) && (
-				<button onClick={() => {
-					setStartErrorMessage(null);
-					socket.emit("start");
-				}}>
-					{roomState.status === "finished" ? "Nueva partida" : "Iniciar partida"}
-				</button>
-			)}
-
-			{startErrorMessage !== null && (
-				<p role="alert">{startErrorMessage}</p>
-			)}
-
-			{roomState !== null && (roomState.status === "playing" || roomState.status === "finished") && (
-				<section className="game-layout">
-					<div>
-						<h2>Tu tablero</h2>
-
-						<GameBoard
-							board={board}
-							currentPiece={currentPiece}
-						/>
-
-						{gameStatus === "lost" && (
-							<p role="alert">Has perdido la partida.</p>
-						)}
-
-						{gameResult !== null && (
-							<p role="status">
-								{gameResult.winner !== null
-									? `Fin de la partida. Ganador: ${gameResult.winner}`
-									: "Fin de la partida."}
-							</p>
-						)}
+				{/* ---------- Columna 2: tablero ---------- */}
+				<section className="column">
+					<div className="board-header">
+						<h2 className="section-title">TABLERO 10×20</h2>
+						<span className={`room-status room-${roomState?.status ?? "waiting"}`}>
+							{getRoomStatusLabel(roomState?.status ?? "waiting")}
+						</span>
 					</div>
 
-					{opponents.length > 0 && (
+					<GameBoard board={board} currentPiece={currentPiece} />
+
+					{gameStatus === "lost" && (
+						<p className="notice notice-lost" role="alert">Has perdido la partida.</p>
+					)}
+
+					{gameResult !== null && (
+						<p className="notice" role="status">
+							{gameResult.winner !== null
+								? `Fin de la partida. Ganador: ${gameResult.winner}`
+								: "Fin de la partida."}
+						</p>
+					)}
+
+					{isAdmin && roomState !== null && roomState.status !== "playing" && (
+						<button
+							className="start-button"
+							onClick={() => {
+								setStartErrorMessage(null);
+								socket.emit("start");
+							}}
+						>
+							{roomState.status === "finished" ? "NUEVA PARTIDA" : "INICIAR PARTIDA"}
+						</button>
+					)}
+
+					{startErrorMessage !== null && (
+						<p className="notice notice-lost" role="alert">{startErrorMessage}</p>
+					)}
+				</section>
+
+				{/* ---------- Columna 3: espectro de rivales ---------- */}
+				<section className="column column-side">
+					<section className="column">
+						<h2 className="section-title">03 · ESPECTRO DE RIVALES</h2>
+
 						<div className="spectrum-list">
-							<h2>Rivales</h2>
+							{opponents.length === 0 && (
+								<p className="empty-text">Sin rivales en la sala.</p>
+							)}
 
 							{opponents.map((opponent) => (
 								<SpectrumView
@@ -386,26 +448,12 @@ function RoomPage()
 								/>
 							))}
 						</div>
-					)}
-
-					<div className="game-info">
-						<h2>Controles</h2>
-
-						<ul className="game-controls">
-							<li>← Mover a la izquierda</li>
-							<li>→ Mover a la derecha</li>
-							<li>↑ Rotar la pieza</li>
-							<li>↓ Descenso rápido</li>
-							<li>Espacio: caída instantánea</li>
-						</ul>
-					</div>
+					</section>
 				</section>
-			)}
+			</main>
 
-			{status === "error" && (
-				<p role="alert">{message}</p>
-			)}
-		</main>
+			<footer className="statusbar" role="status">{message}</footer>
+		</div>
 	);
 }
 

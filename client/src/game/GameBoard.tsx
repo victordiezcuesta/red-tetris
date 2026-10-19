@@ -7,14 +7,14 @@ type GameBoardProps = {
 };
 
 const CELL_COLORS: Record<number, string> = {
-	1: "#00d9ff",
-	2: "#ffe135",
-	3: "#b44aff",
-	4: "#4dff88",
-	5: "#ff5263",
-	6: "#5085ff",
-	7: "#ff9f43",
-	9: "#666666",
+	1: "#4dd0d8",
+	2: "#f5c84c",
+	3: "#b48cf2",
+	4: "#6fd49a",
+	5: "#f27070",
+	6: "#6f90f5",
+	7: "#f59a4d",
+	9: "#4a4d54",
 };
 
 export function GameBoard({ board, currentPiece }: GameBoardProps)
@@ -43,24 +43,31 @@ export function GameBoard({ board, currentPiece }: GameBoardProps)
 	}
 
 	return (
-		<div
-			className="game-board"
-			role="img"
-			aria-label="Tablero de Tetris de 10 columnas y 20 filas"
-		>
-			{visibleBoard.map((row, y) =>
-				row.map((cell, x) => (
-					<div
-						key={`${y}-${x}`}
-						className={`game-cell${cell !== 0 ? " game-cell-filled" : ""}`}
-						style={{
-							backgroundColor: cell === 0
-								? undefined
-								: CELL_COLORS[cell] ?? "#ffffff",
-						}}
-					/>
-				)),
-			)}
+		<div className="board-frame">
+			<span className="corner corner-tl" />
+			<span className="corner corner-tr" />
+			<span className="corner corner-bl" />
+			<span className="corner corner-br" />
+
+			<div
+				className="game-board"
+				role="img"
+				aria-label="Tablero de Tetris de 10 columnas y 20 filas"
+			>
+				{visibleBoard.map((row, y) =>
+					row.map((cell, x) => (
+						<div
+							key={`${y}-${x}`}
+							className={`game-cell${cell !== 0 ? " game-cell-filled" : ""}`}
+							style={{
+								backgroundColor: cell === 0
+									? undefined
+									: CELL_COLORS[cell] ?? "#ffffff",
+							}}
+						/>
+					)),
+				)}
+			</div>
 		</div>
 	);
 }
