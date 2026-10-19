@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"; //son hooks que son funciones espec
 import { Route, Routes, useParams } from "react-router-dom";
 
 import { socket } from "./socket/socket";
-import type { JoinError, RoomState } from "./socket/events";
+import type { JoinError, RoomState, StartError } from "./socket/events";
 
 import "./App.css";
 
@@ -26,6 +26,19 @@ function getJoinErrorMessage(error: JoinError): string
 	}
 }
 
+function getStartErrorMessage(error: StartError): string
+{
+	switch (error)
+	{
+		case "not_in_room":
+			return "You are not in a room.";
+		case "game_not_found":
+			return "The room does not exist.";
+		case "cannot_start":
+			return "Only the host can start the game, and not while it is running.";
+	}
+}
+
 function RoomPage()
 {
 	const { room, playerName } = useParams<{
@@ -33,6 +46,7 @@ function RoomPage()
 		playerName: string;
 	}>();
 
+	const [startErrorMessage, setStartErrorMessage] = useState<string | null>(null);
 	const [roomState, setRoomState] = useState<RoomState | null>(null);
 	const [status, setStatus] = useState<ConnectionStatus>("connecting");
 	const [message, setMessage] = useState("Conectando con el servidor...");
@@ -40,6 +54,9 @@ function RoomPage()
 		room: string;
 		name: string;
 	} | null>(null); //puede ser tambien null y lo inicializamos asi
+	const [gameResult, setGameResult] = useState<{ 
+		winner: string | null
+	} | null>(null);
 
 	const board = useGameStore((state) => state.board);
 	const currentPiece = useGameStore((state) => state.currentPiece);
@@ -54,6 +71,7 @@ function RoomPage()
 	const softDrop = useGameStore((state) => state.softDrop);
 	const hardDrop = useGameStore((state) => state.hardDrop);
 	const tick = useGameStore((state) => state.tick);
+	const endGame = useGameStore((state) => state.endGame);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -187,24 +205,43 @@ function RoomPage()
 			setRoomState(state);
 		};
 
+		const handleStartError = (error: StartError) =>
+		{
+			if (!active)
+				return;
+
+			setStartErrorMessage(getStartErrorMessage(error));
+		};
+
 		const handlePieces = (pieces: PieceType[]) =>
 		{
 			if (!active)
 				return;
 
 			const currentStatus = useGameStore.getState().status;
-			if (currentStatus === "waiting" || currentStatus === "lost") // Inicializamos el tablero al recibir las primeras piezas
+			if (currentStatus !== "playing") // primeras piezas de una partida nueva
+			{
+				setGameResult(null);
+				setStartErrorMessage(null);
 				startGame();
+			}
 
-			
-			receivePieces(pieces); // Guardamos en Zustand las piezas recibidas del servidor
+			receivePieces(pieces);
 		};
-
 		const handlePenalty = (count: number) => {
 			if (!active)
 				return;
 
 			receivePenalty(count);
+		};
+
+		const handleGameOver = (result: { winner: string | null }) =>
+		{
+			if (!active)
+				return;
+
+			setGameResult(result);
+			endGame(); //dejamos de jugar si seguíamos vivos
 		};
 
 		const handleDisconnect = () =>
@@ -226,6 +263,8 @@ function RoomPage()
 		socket.on("pieces", handlePieces);
 		socket.on("penalty", handlePenalty);
 		socket.on("disconnect", handleDisconnect);
+		socket.on("gameOver", handleGameOver);
+		socket.on("startError", handleStartError);
 
 		if (socket.connected) //si ya existe la conexion con el socket ejecutamos directamente handleConnect
 			handleConnect();
@@ -245,6 +284,8 @@ function RoomPage()
 			socket.off("pieces", handlePieces);
 			socket.off("penalty", handlePenalty);
 			socket.off("disconnect", handleDisconnect);
+			socket.off("gameOver", handleGameOver);
+			socket.off("startError", handleStartError);
 
 			socket.disconnect(); //cierra la conexión cuando abandonamos la ruta
 		};
@@ -288,13 +329,20 @@ function RoomPage()
 				</section>
 			)}
 
-			{roomState !== null && roomState.status === "waiting" && roomState.players.some((player) => player.name === joined?.name && player.isAdmin) && (
-					<button onClick={() => socket.emit("start")}>
-						Iniciar partida
-					</button>
+			{roomState !== null && roomState.status !== "playing" && roomState.players.some((player) => player.name === joined?.name && player.isAdmin) && (
+				<button onClick={() => {
+					setStartErrorMessage(null);
+					socket.emit("start");
+				}}>
+					{roomState.status === "finished" ? "Nueva partida" : "Iniciar partida"}
+				</button>
 			)}
 
-			{roomState !== null && roomState.status === "playing" && (
+			{startErrorMessage !== null && (
+				<p role="alert">{startErrorMessage}</p>
+			)}
+
+			{roomState !== null && (roomState.status === "playing" || roomState.status === "finished") && (
 				<section className="game-layout">
 					<div>
 						<h2>Tu tablero</h2>
@@ -306,6 +354,14 @@ function RoomPage()
 
 						{gameStatus === "lost" && (
 							<p role="alert">Has perdido la partida.</p>
+						)}
+
+						{gameResult !== null && (
+							<p role="status">
+								{gameResult.winner !== null
+									? `Fin de la partida. Ganador: ${gameResult.winner}`
+									: "Fin de la partida."}
+							</p>
 						)}
 					</div>
 

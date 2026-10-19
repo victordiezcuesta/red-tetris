@@ -12,7 +12,7 @@ import { addPenaltyLines } from "../game/penalty";
 
 import { socket } from "../socket/socket";
 
-export type GameStatus = "waiting" | "playing" | "lost";
+export type GameStatus = "waiting" | "playing" | "lost" | "finished";
 
 export type GameState =
 {
@@ -32,6 +32,7 @@ type GameActions = {
 	startGame: () => void;
 	receivePieces: (pieces: PieceType[]) => void;
 	receivePenalty: (count: number) => void;
+	endGame: () => void;
 };
 
 type GameStore = GameState & GameActions;
@@ -193,5 +194,15 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		}
 
 		return { board };
+	}),
+
+	endGame: () => set((state) => {
+		if (state.status !== "playing") //si ya habíamos perdido nos quedamos en "lost"
+			return state;
+
+		return {
+			currentPiece: null,
+			status: "finished",
+		};
 	}),
 }));
