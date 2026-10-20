@@ -1,7 +1,5 @@
-import { useEffect } from "react"; //son hooks que son funciones especiales que te permiten utilizar funcionalidades de React dentro de tus componentes
 import { Route, Routes, useParams } from "react-router-dom";
 
-import { socket } from "./socket/socket";
 import type { PlayerState } from "./socket/events";
 
 import "./App.css";
@@ -12,7 +10,7 @@ import { useGameLoop } from "./hooks/useGameLoop";
 import { useRoom } from "./hooks/useRoom";
 
 import { GameBoard } from "./game/GameBoard";
-import { getSpectrum, getOpponents, isAdminPlayer } from "./game/spectrum";
+import { getOpponents, isAdminPlayer } from "./game/spectrum";
 import { SpectrumView } from "./game/SpectrumView";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
@@ -71,33 +69,10 @@ function RoomPage()
 	//variables del tipo GameState
 	const board = useGameStore((state) => state.board);
 	const currentPiece = useGameStore((state) => state.currentPiece);
-	const pieceQueueLength = useGameStore((state) => state.pieceQueue.length);
 	const gameStatus = useGameStore((state) => state.status);
 
 	useGameControls(); //hoook que controla el manejo del teclado y los movimientos
 	useGameLoop(); //hook que controla la caída automática de las piezas
-
-	useEffect(() => {
-		if (gameStatus !== "playing")
-			return;
-
-		socket.emit("spectrum", getSpectrum(board)); //enviamos las alturas de cada columna al servidor
-	}, [gameStatus, board]);
-
-	useEffect(() => {
-		if (gameStatus !== "playing")
-			return;
-
-		if (pieceQueueLength < 3)
-			socket.emit("needPieces", 5);
-	}, [gameStatus, pieceQueueLength, currentPiece]);
-
-	useEffect(() => {
-		if (gameStatus !== "lost")
-			return;
-
-		socket.emit("lost"); //avisamos al servidor de que hemos perdido
-	}, [gameStatus]);
 
 	let opponents: PlayerState[] = [];
 	if (roomState !== null && playerName !== undefined)

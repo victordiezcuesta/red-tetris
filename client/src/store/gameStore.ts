@@ -10,8 +10,6 @@ import { clearLines } from "../game/lines";
 import { hasCollision } from "../game/collision";
 import { addPenaltyLines, hasRowOverflow } from "../game/penalty";
 
-import { socket } from "../socket/socket";
-
 export type GameStatus = "waiting" | "playing" | "lost" | "finished";
 
 export type GameState =
@@ -20,6 +18,7 @@ export type GameState =
 	currentPiece: Piece | null; // la pieza que está cayendo (null si no hay partida)
 	pieceQueue: PieceType[]; // tipos de pieza pendientes, mandados por el servidor
 	status: GameStatus;
+	lastCleared: { count: number } | null; // última vez que se limpiaron líneas | se crea un objeto nuevo cada vez. Aunque tenga el mismo contenido, es otro objeto en memoria
 };
 
 type GameActions = {
@@ -42,6 +41,7 @@ const initialState: GameState = {
 	currentPiece: null,
 	pieceQueue: [],
 	status: "waiting",
+	lastCleared: null,
 };
 
 function getNextPiece(board: Board, pieceQueue: PieceType[]): Pick<GameState, "currentPiece" | "pieceQueue" | "status"> //Pick es un tipo de utilidad que sirve para seleccionar algunas propiedas de un tipo para no tener que devolver todas cuando no nos interesa
@@ -75,7 +75,7 @@ function getNextPiece(board: Board, pieceQueue: PieceType[]): Pick<GameState, "c
 }
 
 //es un hook que Zustand crea para que tus componentes puedan acceder al estado compartido de la partida
-export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>() es una función de Zustand que sirve para crear un store (almacén de estado) del tipo GameStore
+export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>() es una función de Zustand que sirve para crear un store (almacén de estado) del tipo GameStore y ponemos set porque defines acciones que llaman a set
 	...initialState, //copiamos los valores de initialState a useGameStore junto con el set
 
 	moveLeft: () => set((state) => { //set actualiza el estado de GameStore, si devolvemos lo mismo es que no podemos mover la pieza y si modificamos algo solo devolvemos lo que modificamos
@@ -124,11 +124,9 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		const mergedBoard = mergePiece(state.board, piece);
 		const result = clearLines(mergedBoard);
 
-		if (result.rowsCleared > 0)
-			socket.emit("linesCleared", result.rowsCleared);
-
 		return {
 			board: result.board,
+			lastCleared: result.rowsCleared > 0 ? { count: result.rowsCleared } : state.lastCleared, //state.lastCleared Si en esta jugada no completamos una linea, dejamos lastCleared como estaba. Así no cambia su referencia y el middleware no emite nada.
 			...getNextPiece(result.board, state.pieceQueue),
 		};
 	}),
@@ -150,11 +148,9 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		const mergedBoard = mergePiece(state.board, piece);
 		const result = clearLines(mergedBoard);
 
-		if (result.rowsCleared > 0)
-			socket.emit("linesCleared", result.rowsCleared);
-
 		return {
 			board: result.board,
+			lastCleared: result.rowsCleared > 0 ? { count: result.rowsCleared } : state.lastCleared,
 			...getNextPiece(result.board, state.pieceQueue), ///añadimos las demas propiedades con la funcion auxiliar getNextPiece 
 		};
 	}),
@@ -164,6 +160,7 @@ export const useGameStore = create<GameStore>()((set) => ({ //create<GameStore>(
 		currentPiece: null,
 		pieceQueue: [],
 		status: "playing",
+		lastCleared: null,
 	}),
 
 	receivePieces: (pieces) => set((state) => { //recibimos (pieces) que envía el servidor y las añadimos a la cola de piezas

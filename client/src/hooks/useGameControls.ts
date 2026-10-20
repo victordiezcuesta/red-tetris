@@ -1,5 +1,4 @@
-
-import { useEffect } from "react";
+import { useEffect } from "react"; //son hooks que son funciones especiales que te permiten utilizar funcionalidades de React dentro de tus componentes
 import { useGameStore } from "../store/gameStore";
 
 export function useGameControls()
