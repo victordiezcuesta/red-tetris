@@ -44,3 +44,37 @@
 .next-piece-cell-filled {
 	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
 }
+
+/* ============ Marcador (4a columna) ============ */
+.score-panel {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-bottom: 14px;
+	padding: 14px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+}
+
+.score-label {
+	font: 11px var(--mono);
+	letter-spacing: 0.1em;
+	color: var(--muted);
+}
+
+.score-value {
+	font: 700 28px/1 var(--mono);
+	color: var(--amber);
+}
+
+.score-panel-small .score-value {
+	font-size: 18px;
+	color: var(--text);
+}
+
+/* Cuatro columnas en pantallas grandes. Dentro de la media query para no pisar el responsive de App.css */
+@media (min-width: 1001px) {
+	.mission {
+		grid-template-columns: 280px 330px 280px 280px;
+	}
+}
