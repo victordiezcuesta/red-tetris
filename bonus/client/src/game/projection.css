@@ -1,0 +1,6 @@
+/* Celda de la proyeccion: solo contorno, con el color de la pieza (se pone inline) */
+.game-cell.game-cell-projection {
+	background: transparent;
+	border: 2px solid;
+	opacity: 0.6;
+}

@@ -1,4 +1,4 @@
-.PHONY: up down build logs test clean re eval eval-logs eval-clean
+.PHONY: up down build logs test clean re eval eval-logs eval-clean eval-bonus eval-bonus-logs eval-bonus-clean
 
 #DESARROLLO TENEMOS DOS SERVIDORES (CLIENT 5173 Y SERVIDOR 3000)
 up:
@@ -31,3 +31,13 @@ eval-logs:
 
 eval-clean:
 	docker compose -f docker-compose.prod.yml down
+
+#bonus
+eval-bonus:
+	docker compose -f bonus/docker-compose.yml up -d --build
+
+eval-bonus-logs:
+	docker compose -f bonus/docker-compose.yml logs -f
+
+eval-bonus-clean:
+	docker compose -f bonus/docker-compose.yml down

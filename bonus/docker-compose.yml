@@ -1,0 +1,7 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: bonus/Dockerfile
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
