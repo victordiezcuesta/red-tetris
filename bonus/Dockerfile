@@ -13,6 +13,7 @@ WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci
 COPY server/ ./
+COPY bonus/server/ ./
 RUN npm run build
 
 # ---------- Fase 3: imagen final ----------

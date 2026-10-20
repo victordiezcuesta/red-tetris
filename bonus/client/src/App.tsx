@@ -15,6 +15,7 @@ import { GameBoard } from "./game/GameBoard";
 import { getSpectrum, getOpponents, isAdminPlayer } from "./game/spectrum";
 import { SpectrumView } from "./game/SpectrumView";
 import { ScoreBoard } from "./game/ScoreBoard";
+import { Chat } from "./game/Chat";
 
 type ConnectionStatus = "connecting" | "joined" | "error";
 
@@ -219,8 +220,11 @@ function RoomPage()
 					</section>
 				</section>
 
-				{/* ---------- Columna 4: marcador ---------- */}
-				<ScoreBoard />
+				{/* ---------- Columna 4: marcador + chat ---------- */}
+				<div className="column column-side column-stack">
+					<ScoreBoard />
+					<Chat />
+				</div>
 
 			</main>
 

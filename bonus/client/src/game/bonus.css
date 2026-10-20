@@ -78,3 +78,44 @@
 		grid-template-columns: 280px 330px 280px 280px;
 	}
 }
+
+/* ============ Chat ============ */
+.column-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.chat-messages {
+	display: flex;
+	flex-direction: column-reverse;
+	height: 200px;
+	overflow-y: auto;
+	margin-bottom: 10px;
+	padding: 10px 14px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+}
+
+.chat-message {
+	font: 12px/1.5 var(--mono);
+	overflow-wrap: anywhere;
+}
+
+.chat-name {
+	color: var(--amber);
+}
+
+.chat-input {
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+	color: var(--text);
+	font: 12px var(--mono);
+}
+
+.chat-input:focus {
+	outline: none;
+	border-color: var(--amber);
+}

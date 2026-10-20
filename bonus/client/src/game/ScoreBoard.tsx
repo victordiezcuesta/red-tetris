@@ -53,7 +53,7 @@ export function ScoreBoard()
 	}, []);
 
 	return (
-		<section className="column column-side">
+		<section className="column">
 			<section className="column">
 				<h2 className="section-title">04 · MARCADOR</h2>
 
