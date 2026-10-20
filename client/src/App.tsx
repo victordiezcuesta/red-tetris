@@ -68,7 +68,6 @@ function RoomPage()
 		requestStart,
 	} = useRoom(room, playerName); //hook del control del estado de la sala
 
-
 	//variables del tipo GameState
 	const board = useGameStore((state) => state.board);
 	const currentPiece = useGameStore((state) => state.currentPiece);
