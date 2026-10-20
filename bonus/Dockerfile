@@ -1,4 +1,4 @@
-# ---------- Fase 1: compilar el cliente (con el bonus encima) ----------
+# ---------- Fase 1: compilar el cliente (lo sobreescribimos con el segundo copy solo los archivos que tenemos en la carpeta bonus) ----------
 FROM node:lts-alpine AS client-build
 WORKDIR /app/client
 COPY client/package*.json ./

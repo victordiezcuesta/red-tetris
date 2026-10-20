@@ -1,14 +1,15 @@
 import { COLS, ROWS, type Board } from "./board";
 import type { Piece } from "./pieces";
 import { getProjectionCells } from "./projection";
-import "./projection.css";
+import { NextPiece } from "./NextPiece";
+import "./bonus.css";
 
 type GameBoardProps = {
 	board: Board;
 	currentPiece: Piece | null;
 };
 
-const CELL_COLORS: Record<number, string> = {
+export const CELL_COLORS: Record<number, string> = {
 	1: "#4dd0d8",
 	2: "#f5c84c",
 	3: "#b48cf2",
@@ -49,38 +50,42 @@ export function GameBoard({ board, currentPiece }: GameBoardProps)
 	}
 
 	return (
-		<div className="board-frame">
-			<span className="corner corner-tl" />
-			<span className="corner corner-tr" />
-			<span className="corner corner-bl" />
-			<span className="corner corner-br" />
+		<>
+			<NextPiece />
 
-			<div
-				className="game-board"
-				role="img"
-				aria-label="Tablero de Tetris de 10 columnas y 20 filas"
-			>
-				{visibleBoard.map((row, y) =>
-					row.map((cell, x) => {
-						const projectionValue = projectionCells !== null ? projectionCells[y][x] : 0;
-						const isProjection = cell === 0 && projectionValue !== 0;
+			<div className="board-frame">
+				<span className="corner corner-tl" />
+				<span className="corner corner-tr" />
+				<span className="corner corner-bl" />
+				<span className="corner corner-br" />
 
-						let className = "game-cell";
-						if (cell !== 0)
-							className += " game-cell-filled";
-						else if (isProjection)
-							className += " game-cell-projection";
+				<div
+					className="game-board"
+					role="img"
+					aria-label="Tablero de Tetris de 10 columnas y 20 filas"
+				>
+					{visibleBoard.map((row, y) =>
+						row.map((cell, x) => {
+							const projectionValue = projectionCells !== null ? projectionCells[y][x] : 0;
+							const isProjection = cell === 0 && projectionValue !== 0;
 
-						let style = {};
-						if (cell !== 0)
-							style = { backgroundColor: CELL_COLORS[cell] ?? "#ffffff" };
-						else if (isProjection)
-							style = { borderColor: CELL_COLORS[projectionValue] ?? "#ffffff" };
+							let className = "game-cell";
+							if (cell !== 0)
+								className += " game-cell-filled";
+							else if (isProjection)
+								className += " game-cell-projection";
 
-						return <div key={`${y}-${x}`} className={className} style={style} />;
-					}),
-				)}
+							let style = {};
+							if (cell !== 0)
+								style = { backgroundColor: CELL_COLORS[cell] ?? "#ffffff" };
+							else if (isProjection)
+								style = { borderColor: CELL_COLORS[projectionValue] ?? "#ffffff" };
+
+							return <div key={`${y}-${x}`} className={className} style={style} />;
+						}),
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

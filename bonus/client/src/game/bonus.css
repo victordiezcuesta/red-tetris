@@ -1,0 +1,46 @@
+.game-cell.game-cell-projection {
+	background: transparent;
+	border: 2px solid;
+	opacity: 0.6;
+}
+
+.next-piece {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 56px;
+	margin-bottom: 14px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+}
+
+.next-piece-label {
+	font: 700 12px/1 var(--mono);
+	letter-spacing: 0.12em;
+	color: var(--amber);
+}
+
+/* Caja fija para que el panel no cambie de tamano segun la pieza */
+.next-piece-box {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 62px;
+	height: 30px;
+}
+
+.next-piece-grid {
+	display: grid;
+	gap: 2px;
+}
+
+.next-piece-cell {
+	width: 14px;
+	height: 14px;
+	border-radius: 2px;
+}
+
+.next-piece-cell-filled {
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}

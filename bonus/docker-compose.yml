@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: ..
+      context: .. # coge como contexto todos los archivos de client y server
       dockerfile: bonus/Dockerfile
     ports:
       - "${SERVER_PORT:-3000}:3000"
