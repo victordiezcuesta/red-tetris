@@ -1,34 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { socket } from "../socket/socket";
-import type { ChatMessage } from "../socket/events";
+import { sendChat } from "../socket/socketMiddleware";
+import { useRoomStore } from "../store/roomStore";
 import "./bonus.css";
 
 const MAX_LENGTH = 50;
-const MAX_SHOWN = 30; //solo guardamos los 30 ultimos mensajes
 
 export function Chat()
 {
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const messages = useRoomStore((state) => state.messages);
 	const [text, setText] = useState("");
-
-	useEffect(() => {
-		const handleChat = (message: ChatMessage) => {
-			setMessages((previous) => [...previous, message].slice(-MAX_SHOWN));
-		};
-
-		socket.on("chat", handleChat);
-
-		return () => {
-			socket.off("chat", handleChat);
-		};
-	}, []);
 
 	const send = () => {
 		if (text.trim() === "")
 			return;
 
-		socket.emit("chat", text);
+		sendChat(text);
 		setText("");
 	};
 

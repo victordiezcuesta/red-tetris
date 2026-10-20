@@ -1,24 +1,10 @@
-import { useEffect, useState } from "react";
+import { useRoomStore } from "../store/roomStore";
 
-import { socket } from "../socket/socket";
-import type { TopScore } from "../socket/events";
 import "./bonus.css";
 
 export function TopScores()
 {
-	const [scores, setScores] = useState<TopScore[]>([]);
-
-	useEffect(() => {
-		const handleTopScores = (top: TopScore[]) => {
-			setScores(top);
-		};
-
-		socket.on("topScores", handleTopScores);
-
-		return () => {
-			socket.off("topScores", handleTopScores);
-		};
-	}, []);
+	const scores = useRoomStore((state) => state.topScores);
 
 	return (
 		<section className="column">

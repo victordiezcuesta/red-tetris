@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import { socket } from "../socket/socket";
 import { useGameStore } from "../store/gameStore";
 import "./bonus.css";
 
@@ -27,29 +26,24 @@ export function ScoreBoard()
 	const [lines, setLines] = useState(0);
 
 	useEffect(() => {
-		const handleOutgoing = (event: string, cleared: unknown) => {
-			if (event !== "linesCleared" || typeof cleared !== "number") // El store emite "linesCleared" cada vez que se completan lineas: aprovechamos ese evento
-				return;
-
-			setScore((previous) => previous + getLinePoints(cleared)); //es una variable que estamos declarando en ese momento y solo sirve para cada set por separado
-			setLines((previous) => previous + cleared);
-		};
-
-		socket.onAnyOutgoing(handleOutgoing); //registra handleOutgoing para que Socket.IO lo ejecute cuando se emitan eventos salientes
-
-		// cada veez que cambie el estado de useGameStore ejecutamos esta funcion que lo que provoca es el reinicio de la lineas y de la puntuacion
 		const unsubscribe = useGameStore.subscribe((state, previousState) => { //state y previousState lo proporciona Zustand
+			// partida nueva: reiniciamos marcador
 			if (state.status === "playing" && previousState.status !== "playing")
 			{
 				setScore(0);
 				setLines(0);
 			}
+
+			// se han limpiado líneas
+			if (state.lastCleared !== null && state.lastCleared !== previousState.lastCleared)
+			{
+				const cleared = state.lastCleared.count; // lo guardamos aquí porque dentro de setScore TypeScript ya no sabe que no es null
+				setScore((previous) => previous + getLinePoints(cleared));
+				setLines((previous) => previous + cleared);
+			}
 		});
 
-		return () => {
-			socket.offAnyOutgoing(handleOutgoing);
-			unsubscribe();
-		};
+		return unsubscribe;
 	}, []);
 
 	return (
