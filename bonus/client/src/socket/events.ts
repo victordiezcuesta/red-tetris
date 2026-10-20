@@ -20,6 +20,11 @@ export type ChatMessage = {
 	text: string
 };
 
+export type TopScore = {
+	name: string;
+	room: string;
+	score: number;
+};
 
 export type JoinError = "invalid_name" | "already_started" | "name_taken";
 export type StartError = "not_in_room" | "game_not_found" | "cannot_start";
@@ -33,6 +38,7 @@ export type ServerToClientEvents = {
 	gameOver: (result: { winner: string | null }) => void;
 	startError: (error: StartError) => void;
 	chat: (message: ChatMessage) => void;
+	topScores: (scores: TopScore[]) => void;
 };
 
 export type ClientToServerEvents = {

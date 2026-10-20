@@ -79,6 +79,38 @@
 	}
 }
 
+/* ============ Top 3 global ============ */
+.top-row {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	margin-bottom: 8px;
+	padding: 10px 14px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+	font: 12px var(--mono);
+}
+
+.top-position {
+	color: var(--amber);
+	font-weight: 700;
+}
+
+.top-name {
+	flex: 1;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.top-room {
+	color: var(--muted);
+}
+
+.top-score {
+	color: var(--amber);
+	font-weight: 700;
+}
+
 /* ============ Chat ============ */
 .column-stack {
 	display: flex;

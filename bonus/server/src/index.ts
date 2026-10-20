@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { GameManager } from "./classes/GameManager.js";
 import { Player } from "./classes/Player.js";
 import { isValidName, isValidMessage } from "./utils/validate.js";
+import { Leaderboard } from "./classes/Leaderboard.js";
+import { getLinePoints } from "./utils/score.js";
 
 import type { Game } from "./classes/Game.js"; //importamos solo el tipo no ninguna variable ni funcion
 
@@ -23,12 +25,32 @@ app.get("/{*splat}", (_req, res) => { //app.get("/{*splat}" para cualquier URL c
 const httpServer = createServer(app); //Crea un servidor HTTP de Node.js y configura app como la función que procesará las peticiones HTTP recibidas
 const io = new Server(httpServer, { cors: { origin: "*" } }); //creamos un servidor de Socket.IO asociado a tu servidor HTTP | cors es que intercambio de recursos entre distintos orígenes porque tenemos el back y el front en distionts puertos
 const gameManager = new GameManager(); // todas las partidas
+const leaderboard = new Leaderboard(); //top 3 de todas las salas
+const scores = new Map<string, number>(); //Guarda los puntos de cada jugador en la partida actual, indexados por socket.id
 
 const INITIAL_PIECES = 10;
 const PIECES_BATCH = 5; //piezas por defecto cuando el cliente pide más
 
+// Pasa el score del jugador al top 3 y lo borra del Map (así no se registra dos veces)
+function recordScore(room: string, name: string, socketId: string): void
+{
+	const score = scores.get(socketId);
+	scores.delete(socketId);
+
+	if (score === undefined || score === 0)
+		return;
+
+	if (leaderboard.add({ name: name, room: room, score: score }))
+		io.emit("topScores", leaderboard.getTop()); //a todos los clientes de todas las salas
+}
+
 function emitGameOver(room: string, game: Game): void
 {
+	for (let i = 0; i < game.players.length; i++)
+	{
+		recordScore(room, game.players[i].name, game.players[i].socketId);
+	}
+
 	const winner = game.getWinner();
 	io.to(room).emit("gameOver", { winner: winner === null ? null : winner.name });
 }
@@ -65,6 +87,7 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		socket.data.room = data.room; //actualizamos la sala en el socket
 		socket.join(data.room); //enlaza cada socket de cada jugador en una sola sala
 		socket.emit("joined", { room: data.room, name: data.name }); // enviamos al cliente mediante el socket del jugador que se ha unido a una partida con un nombre
+		socket.emit("topScores", leaderboard.getTop()); //el que entra ve el top actual
 		io.to(data.room).emit("state", game.getState()); //enviamos a todos los sockets de la partida el estado del juego
 	});
 
@@ -92,6 +115,7 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		for (let i = 0; i < game.players.length; i++)
 		{
 			const player = game.players[i];
+			scores.set(player.socketId, 0); //todos empiezan la partida con 0 puntos
 			io.to(player.socketId).emit("pieces", game.getPieceTypes(player.socketId, INITIAL_PIECES)); //enviamos las piezas iniciales a todos los jugadores
 		}
 
@@ -129,6 +153,10 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 
 		if (typeof cleared !== "number")
 			return;
+
+		const scorer = game.findPlayer(socket.id);
+		if (scorer !== undefined && scorer.isAlive && game.status === "playing") //Solo sumamos puntos si el jugador existe, está vivo y la partida está en juego
+			scores.set(socket.id, (scores.get(socket.id) ?? 0) + getLinePoints(cleared));
 
 		const penalty = game.getPenalty(socket.id, cleared);
 		for (let i = 0; i < penalty.targets.length; i++)
@@ -186,6 +214,10 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		if (!game.markLost(socket.id))
 			return;
 
+		const loser = game.findPlayer(socket.id);
+		if (loser !== undefined)
+			recordScore(room, loser.name, socket.id);
+
 		io.to(room).emit("state", game.getState());
 		if (game.status === "finished")
 			emitGameOver(room, game);
@@ -201,6 +233,11 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 			return;
 
 		const wasPlaying = game.status === "playing"; //lo guardamos antes de quitar al jugador
+
+		const leaving = game.findPlayer(socket.id);
+		if (leaving !== undefined)
+			recordScore(room, leaving.name, socket.id); //guardamos el score del jugador antes de eleminarlo despues del que cliente cierre la pestaña
+
 		game.removePlayer(socket.id);
 
 		io.to(room).emit("state", game.getState());

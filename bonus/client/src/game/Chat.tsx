@@ -35,7 +35,7 @@ export function Chat()
 	return (
 		<section className="column">
 			<section className="column">
-				<h2 className="section-title section-spaced">05 · CHAT</h2>
+				<h2 className="section-title section-spaced">06 · CHAT</h2>
 
 				{/* column-reverse: el scroll se queda abajo, en el mensaje mas nuevo */}
 				<div className="chat-messages">
