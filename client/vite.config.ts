@@ -22,7 +22,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/main.tsx", "src/vite-env.d.ts", "src/App.tsx"],
+      exclude: ["src/main.tsx", "src/vite-env.d.ts"],
       reporter: ["text", "html"],
       thresholds: {
         statements: 70,
