@@ -10,10 +10,10 @@ export default defineConfig({
       exclude: ["src/index.ts"],
       reporter: ["text", "html"], //como se muestra el resultado: text es la tabla en la terminal y html es un informe navegable en coverage/index.html
       thresholds: {
-        statements: 70,
+        statements: 70, //se refiere a todas las operaciones de una funcion, que puede ser asignaciones, sumas, llamadas a otras funciones, etc...
         functions: 70,
         lines: 70,
-        branches: 50,
+        branches: 50, //caminos posibles que puede seguir una condición
       },
     },
   },
