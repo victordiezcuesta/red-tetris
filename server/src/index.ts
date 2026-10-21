@@ -137,7 +137,7 @@ io.on("connection", (socket) => { //.on es un metodo que sirve para escuchar un 
 		}
 	});
 
-	socket.on("spectrum", (data: unknown) => {
+	socket.on("spectrum", (data: unknown) => { //el spectrum es un array de 10 numeros(las 10 columnas) que represneta de 0 a 20 cada fila como esta llena hasta arriba
 		const room = socket.data.room;
 		if (typeof room !== "string")
 			return;
