@@ -31,6 +31,7 @@ SCRIPT_NAME="$(basename "$0")"
 		! -name ".gitkeep" \
 		! -name "package-lock.json" \
 		! -name "subject.txt" \
+		! -name "README.md" \
 		-print0 |
 	sort -z |
 	while IFS= read -r -d '' file; do
