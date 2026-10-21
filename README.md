@@ -18,15 +18,7 @@
 
 ## 🎬 Demo
 
-<!--
-  HOW TO ADD THE VIDEO:
-  1. Edit this README on GitHub's web UI (pencil icon).
-  2. Drag your video (.mp4 / .mov, max 100 MB) onto the line below.
-  3. GitHub will generate a https://github.com/user-attachments/assets/... URL. Leave it alone on its own line.
-  Delete this comment and the placeholder line below once done.
--->
-
-https://github.com/user-attachments/assets/REPLACE-WITH-YOUR-VIDEO-URL
+https://github.com/user-attachments/assets/44d407c4-84b6-49c1-b8a0-c32dca6458f6
 
 > Multiplayer match: each player sees their own board, their opponents' live *spectrum*, and receives penalty lines whenever an opponent clears several rows at once.
 
