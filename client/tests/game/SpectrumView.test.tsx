@@ -8,7 +8,7 @@ describe("SpectrumView", () => {
 	it("muestra el nombre, que está vivo y la altura máxima", () => {
 		render(<SpectrumView name="victor" spectrum={spectrum} isAlive={true} />);
 
-		expect(screen.getByText("victor")).toBeInTheDocument();
+		expect(screen.getByText("victor")).toBeInTheDocument(); //toBeInTheDocument es para comprobar que un elemento existe en el DOM(es la representación de una página HTML que el navegador crea en memoria para que JavaScript pueda consultar y modificar sus elementos)
 		expect(screen.getByText("VIVO")).toBeInTheDocument();
 		expect(screen.getByText("4 / 20")).toBeInTheDocument();
 	});
